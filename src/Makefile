@@ -20,7 +20,11 @@
 BINARY = manamic
 
 OPENCM3_DIR=../libopencm3
-LDSCRIPT = $(OPENCM3_DIR)/lib/stm32/f4/stm32f4-discovery.ld
+## LDSCRIPT = $(OPENCM3_DIR)/lib/stm32/f4/stm32f4-discovery.ld
+LDSCRIPT = ../stm32f4-discovery.ld
+OPENOCDCNF=/usr/share/openocd/scripts/board/stm32f4discovery.cfg
 
 include ../libopencm3.target.mk
 
+push:
+	openocd -f $(OPENOCDCNF) -c "program $(BINARY).elf verify reset"
