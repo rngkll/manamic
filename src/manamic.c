@@ -22,7 +22,6 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/adc.h>
-#include <libopencm3/stm32/dac.h>
 
 #define LED_DISCO_PORT      GPIOD
 #define LED_DISCO_GREEN_PIN GPIO12
@@ -33,20 +32,21 @@
 
 static void clock_setup(void);
 static void gpio_setup(void);
-static void adc_setup(void);
-//static void dac_setup(void);
-static uint16_t read_adc_naiive(uint8_t channel);
+//static uint16_t read_adc_naiive(uint8_t channel);
+static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time);
+static uint16_t record(uint8_t channel);
 
 //-----------------------------------------------------
 int main(void)
 {
-   int i, j=0;
+   int i;
+   //int j=0;
    clock_setup();
    gpio_setup();
-   adc_setup();
-  // dac_setup();
+   adc_setup(ADC1, ADC_CHANNEL8, ADC_SMPR_SMP_3CYC);
 
-   gpio_set(LED_DISCO_PORT, LED_DISCO_LRED_PIN);
+   //start recording
+   record(ADC_CHANNEL8);
 
 
 
@@ -58,20 +58,21 @@ int main(void)
       uint16_t input_adc1 = read_adc_naiive(1);
       */
 
-      /* Using API function gpio_toggle(): */
-      gpio_toggle(LED_DISCO_PORT, LED_DISCO_GREEN_PIN |
-                                  LED_DISCO_LRED_PIN |
-                                  LED_DISCO_RED_PIN |
-                                  LED_DISCO_BLUE_PIN);   /* LED on/off */
-
-      for (i = 0; i < 9000000; i++) {   /* Wait a bit. */
-         __asm__("nop");
-      }
 
       /*
       printf("tick: %d: adc0= %u, target adc1=%d, adc1=%d\n",
             j++, input_adc0, target, input_adc1);
       */
+   }
+   
+   /* Using API function gpio_toggle(): */
+   gpio_toggle(LED_DISCO_PORT, LED_DISCO_GREEN_PIN |
+         LED_DISCO_LRED_PIN |
+         LED_DISCO_RED_PIN |
+         LED_DISCO_BLUE_PIN);   /* LED on/off */
+
+   for (i = 0; i < 9000000; i++) {   /* Wait a bit. */
+      __asm__("nop");
    }
 
    return 0;
@@ -101,39 +102,39 @@ static void gpio_setup(void)
    gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO0);
    gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO1);
 
-
 }
 
 //------------------------------------------------------
-static void adc_setup(void)
-{
-   adc_off(ADC1);
-   adc_disable_scan_mode(ADC1);
-   adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_3CYC);
+//static uint16_t read_adc_naiive(uint8_t channel)
+//{
+//   uint8_t channel_array[16];
+//   channel_array[0] = channel;
+//   adc_set_regular_sequence(ADC1, 1, channel_array);
+//   adc_start_conversion_regular(ADC1);
+//   while (!adc_eoc(ADC1));
+//   uint16_t reg16 = adc_read_regular(ADC1);
+//   return reg16;
+//}
 
-   adc_power_on(ADC1);
+//------------------------------------------------------
+static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time)
+{
+   adc_off(adc);
+   adc_disable_scan_mode(adc);
+//   adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_3CYC);
+   adc_set_resolution(adc, ADC_CR1_RES_12BIT);
+   adc_set_sample_time(adc, channel, time);
+   adc_power_on(adc);
 
 }
 
-//------------------------------------------------------
-static uint16_t read_adc_naiive(uint8_t channel)
+//-------------------------------------------------------
+static uint16_t record(uint8_t channel)
 {
-   uint8_t channel_array[16];
-   channel_array[0] = channel;
-   adc_set_regular_sequence(ADC1, 1, channel_array);
+   adc_set_regular_sequence(ADC1, 1, channel);
    adc_start_conversion_regular(ADC1);
-   while (!adc_eoc(ADC1));
+
    uint16_t reg16 = adc_read_regular(ADC1);
    return reg16;
+
 }
-
-//------------------------------------------------------
-/*static void dac_setup(void)
-{
-   gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO5);
-   dac_disable(CHANNEL_2);
-   dac_disable_waveform_generation(CHANNEL_2);
-   dac_enable(CHANNEL_2);
-   dac_set_trigger_source(DAC_CR_TSEL2_SW);
-}*/
-
