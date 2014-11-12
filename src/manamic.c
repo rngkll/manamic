@@ -33,8 +33,8 @@
 static void clock_setup(void);
 static void gpio_setup(void);
 //static uint16_t read_adc_naiive(uint8_t channel);
-static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time);
-static uint16_t record(uint8_t channel);
+//static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time);
+static void record();
 
 //-----------------------------------------------------
 int main(void)
@@ -42,11 +42,11 @@ int main(void)
    int i;
    //int j=0;
    clock_setup();
-   gpio_setup();
-   adc_setup(ADC1, ADC_CHANNEL8, ADC_SMPR_SMP_3CYC);
+  gpio_setup();
+   //adc_setup(ADC1, ADC_CHANNEL8, ADC_SMPR_SMP_3CYC);
 
    //start recording
-   record(ADC_CHANNEL8);
+   record();
 
 
 
@@ -117,6 +117,7 @@ static void gpio_setup(void)
 //}
 
 //------------------------------------------------------
+/*
 static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time)
 {
    adc_off(adc);
@@ -127,14 +128,22 @@ static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time)
    adc_power_on(adc);
 
 }
+*/
 
 //-------------------------------------------------------
-static uint16_t record(uint8_t channel)
+/* http://www.embedds.com/introducing-to-stm32-adc-programming-part1/
+ * Injected conversion mode has priority over regular mode
+*/ 
+static void record()
 {
-   adc_set_regular_sequence(ADC1, 1, channel);
-   adc_start_conversion_regular(ADC1);
+   //set clock
+   rcc_periph_clock_enable(RCC_GPIOB);
+   rcc_periph_clock_enable(RCC_GPIOC);
+   
+   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
+   gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO10);
 
-   uint16_t reg16 = adc_read_regular(ADC1);
-   return reg16;
+   printf("hola");
+
 
 }
