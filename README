@@ -1,0 +1,23 @@
+Steps to use stm32f4 in linux
+
+1. Install toolchain
+2. Install GDB for arm
+3. Install openocd
+4. Create a project
+
+Add the following lines to the makefile
+
+#------------------------
+push:
+	openocd -f $(OPENOCDCNF) -c "program $(BINARY).elf verify reset"
+#-------------------------
+
+Build your project
+
+run openocd with configuration file for your board
+openocd -f /usr/share/openocd/scripts/board/stm32f4discovery.cfg
+
+load the projecto to the board with make push
+
+run gdb
+arm-none-eabi-gdb -ex "target remote localhost:3333" <project.elf>

@@ -87,7 +87,7 @@ static void clock_setup(void)
    rcc_periph_clock_enable(RCC_GPIOD);
 
    /* Enable ADC clock */
-   rcc_periph_clock_enable(RCC_ADC1);
+   //rcc_periph_clock_enable(RCC_ADC1);
 }
 
 //------------------------------------------------------
@@ -137,8 +137,7 @@ static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time)
 static void record()
 {
    //set clock
-   rcc_periph_clock_enable(RCC_GPIOB);
-   rcc_periph_clock_enable(RCC_GPIOC);
+   rcc_periph_clock_enable(RCC_SPI2);
    
    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
    gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO10);
