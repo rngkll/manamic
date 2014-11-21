@@ -1,5 +1,4 @@
 /*
- * This file is part of the libopencm3 project.
  *
  * Copyright (C) 2009 Uwe Hermann <uwe@hermann-uwe.de>
  * Copyright (C) 2011 Stephen Caudle <scaudle@doceme.com>
@@ -22,6 +21,7 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/adc.h>
+#include <libopencm3/stm32/spi.h>
 
 #define LED_DISCO_PORT      GPIOD
 #define LED_DISCO_GREEN_PIN GPIO12
@@ -34,7 +34,7 @@ static void clock_setup(void);
 static void gpio_setup(void);
 //static uint16_t read_adc_naiive(uint8_t channel);
 //static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time);
-static void record();
+static void record(void);
 
 //-----------------------------------------------------
 int main(void)
@@ -42,38 +42,32 @@ int main(void)
    int i;
    //int j=0;
    clock_setup();
-  gpio_setup();
-   //adc_setup(ADC1, ADC_CHANNEL8, ADC_SMPR_SMP_3CYC);
+   gpio_setup();
 
-   //start recording
-   record();
 
 
 
    /* Blink the LED (PC8) on the board. */
    while (1) {
       /*
-      uint16_t input_adc0 = read_adc_naiive(0);
-      uint16_t target = input_adc0 / 2;
-      uint16_t input_adc1 = read_adc_naiive(1);
-      */
-
-
-      /*
       printf("tick: %d: adc0= %u, target adc1=%d, adc1=%d\n",
             j++, input_adc0, target, input_adc1);
       */
-   }
-   
-   /* Using API function gpio_toggle(): */
-   gpio_toggle(LED_DISCO_PORT, LED_DISCO_GREEN_PIN |
-         LED_DISCO_LRED_PIN |
-         LED_DISCO_RED_PIN |
-         LED_DISCO_BLUE_PIN);   /* LED on/off */
+		/* Using API function gpio_toggle(): */
+		/*gpio_toggle(LED_DISCO_PORT, LED_DISCO_GREEN_PIN |
+			   LED_DISCO_LRED_PIN |
+				LED_DISCO_RED_PIN |
+				LED_DISCO_BLUE_PIN);*/   /* LED on/off */
+		//start recording
+		record();
 
-   for (i = 0; i < 9000000; i++) {   /* Wait a bit. */
-      __asm__("nop");
-   }
+		for (i = 0; i < 9000000; i++) {   /* Wait a bit. */
+			__asm__("nop");
+		}
+
+		gpio_clear(LED_DISCO_PORT, LED_DISCO_RED_PIN);
+	
+	}
 
    return 0;
 }
@@ -102,47 +96,18 @@ static void gpio_setup(void)
    gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO0);
    gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO1);
 
-}
-
-//------------------------------------------------------
-//static uint16_t read_adc_naiive(uint8_t channel)
-//{
-//   uint8_t channel_array[16];
-//   channel_array[0] = channel;
-//   adc_set_regular_sequence(ADC1, 1, channel_array);
-//   adc_start_conversion_regular(ADC1);
-//   while (!adc_eoc(ADC1));
-//   uint16_t reg16 = adc_read_regular(ADC1);
-//   return reg16;
-//}
-
-//------------------------------------------------------
-/*
-static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time)
-{
-   adc_off(adc);
-   adc_disable_scan_mode(adc);
-//   adc_set_sample_time_on_all_channels(ADC1, ADC_SMPR_SMP_3CYC);
-   adc_set_resolution(adc, ADC_CR1_RES_12BIT);
-   adc_set_sample_time(adc, channel, time);
-   adc_power_on(adc);
+	gpio_set_af(GPIOB, GPIO_AF1, GPIO10);
 
 }
-*/
 
 //-------------------------------------------------------
-/* http://www.embedds.com/introducing-to-stm32-adc-programming-part1/
- * Injected conversion mode has priority over regular mode
-*/ 
-static void record()
+static void record(void)
 {
+	
+	//spi_clean_disable(SPI2);
    //set clock
    rcc_periph_clock_enable(RCC_SPI2);
-   
-   gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
-   gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO10);
-
-   printf("hola");
-
+	spi_set_baudrate_prescaler(SPI2, SPI_CR1_BR_FPCLK_DIV_32);
+	gpio_set(LED_DISCO_PORT, LED_DISCO_RED_PIN);
 
 }
