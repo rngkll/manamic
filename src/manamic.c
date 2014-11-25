@@ -34,7 +34,7 @@ static void clock_setup(void);
 static void gpio_setup(void);
 //static uint16_t read_adc_naiive(uint8_t channel);
 //static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time);
-static void record(void);
+static void is2_setup(void);
 
 //-----------------------------------------------------
 int main(void)
@@ -43,6 +43,7 @@ int main(void)
    //int j=0;
    clock_setup();
    gpio_setup();
+	i2s_setup();
 
 
 
@@ -59,7 +60,6 @@ int main(void)
 				LED_DISCO_RED_PIN |
 				LED_DISCO_BLUE_PIN);*/   /* LED on/off */
 		//start recording
-		record();
 
 		for (i = 0; i < 9000000; i++) {   /* Wait a bit. */
 			__asm__("nop");
@@ -80,8 +80,8 @@ static void clock_setup(void)
    /* Enable GPIOD clock. */ 
    rcc_periph_clock_enable(RCC_GPIOD);
 
-   /* Enable ADC clock */
-   //rcc_periph_clock_enable(RCC_ADC1);
+   /* Enable SPI2 Periph and gpio clocks */
+   rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_SPI2EN);
 }
 
 //------------------------------------------------------
@@ -101,13 +101,26 @@ static void gpio_setup(void)
 }
 
 //-------------------------------------------------------
-static void record(void)
+static void is2_setup(void)
 {
-	
-	//spi_clean_disable(SPI2);
-   //set clock
-   rcc_periph_clock_enable(RCC_SPI2);
-	spi_set_baudrate_prescaler(SPI2, SPI_CR1_BR_FPCLK_DIV_32);
-	gpio_set(LED_DISCO_PORT, LED_DISCO_RED_PIN);
+	/* Reset SPI, SPI_CR1 register cleared, SPI is disabled */
+	spi_reset(SPI2);
 
+	/* Set up SPI in Master mode with:
+	 * Clock baud rate: 1/64 of peripheral clock frequency
+	 * Clock polarity: Idle High
+	 * Clock phase: Data valid on 2nd clock pulse
+	 * Data frame format: 8-bit
+	 * Frame format: MSB First
+	 */
+	spi_init_master(SPI2,
+		SPI_CR1_BAUDRATE_FPCLK_DIV_64,
+		SPI_CR1_CPOL_CLK_TO_1_WHEN_IDLE,
+		SPI_CR1_CPHA_CLK_TRANSITION_2,
+		SPI_CR1_DFF_8BIT,
+		SPI_CR1_MSBFIRST);
+	 
+	/* Enable SPI1 periph. */
+	spi_enable(SPI2);
 }
+
