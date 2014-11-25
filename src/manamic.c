@@ -43,7 +43,7 @@ int main(void)
    //int j=0;
    clock_setup();
    gpio_setup();
-	i2s_setup();
+	is2_setup();
 
 
 
@@ -81,7 +81,7 @@ static void clock_setup(void)
    rcc_periph_clock_enable(RCC_GPIOD);
 
    /* Enable SPI2 Periph and gpio clocks */
-   rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_SPI2EN);
+   rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_SPI2EN);
 }
 
 //------------------------------------------------------
@@ -117,10 +117,23 @@ static void is2_setup(void)
 		SPI_CR1_BAUDRATE_FPCLK_DIV_64,
 		SPI_CR1_CPOL_CLK_TO_1_WHEN_IDLE,
 		SPI_CR1_CPHA_CLK_TRANSITION_2,
-		SPI_CR1_DFF_8BIT,
+		SPI_CR1_DFF_16BIT,
 		SPI_CR1_MSBFIRST);
 	 
 	/* Enable SPI1 periph. */
 	spi_enable(SPI2);
+
+	/*
+	 * Set NSS management to software.
+	 * Note:
+	 * Setting nss high is very important, even if we are controlling the GPIO
+	 * ourselves this bit needs to be at least set to 1, otherwise the spi
+	 * peripheral will not send any data out.
+	 */
+	spi_enable_software_slave_management(SPI2);
+	spi_set_nss_high(SPI2);
+			 
+	/* Enable SPI1 periph. */
+	spi_enable(SPI1);
 }
 
