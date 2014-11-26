@@ -111,3 +111,28 @@ static void record(void)
 	gpio_set(LED_DISCO_PORT, LED_DISCO_RED_PIN);
 
 }
+
+//static void mic_init(DEFAULT_AUDIO_IN_FREQ, DEFAULT_AUDIO_IN_BIT_RESOLUTION, DEFAULT_AUDIO_IN_CHANNEL_NBR)
+static void mic_init(uint32_t AudioFreq, uint32_t BitRes, uint32_t ChnlNbr)
+{
+	/*Enable PLLI2S clock*/
+	rcc_periph_clock_enable(RCC_SPI2);
+
+	clock_scale_t rccclkinit; 
+
+	/* PLLI2S_VCO Input = HSE_VALUE/PLL_M = 1 Mhz */
+	if ((AudioFreq & 0x7) == 0)
+	{
+		/* Audio frequency multiple of 8 (8/16/32/48/96/192)*/
+		/* PLLI2S_VCO Output = PLLI2S_VCO Input * PLLI2SN = 192 Mhz */
+		/* I2SCLK = PLLI2S_VCO Output/PLLI2SR = 192/6 = 32 Mhz */
+		#define RCC_PERIPHCLK_I2S             ((uint32_t)0x00000001)
+		uint32_t PeriphClockSelection = RCC_PERIPHCLK_I2S
+		uint8_t plli2sn = 192;
+		uint8_t plli2sn = 8;
+		rcc_clock_setup_hse_3v3(&rccclkinit);
+	}
+
+
+
+
