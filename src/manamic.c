@@ -34,7 +34,7 @@ static void clock_setup(void);
 static void gpio_setup(void);
 //static uint16_t read_adc_naiive(uint8_t channel);
 //static void adc_setup(uint32_t adc, uint8_t channel, uint8_t time);
-static void record(void);
+static void is2_setup(void);
 
 //-----------------------------------------------------
 int main(void)
@@ -43,6 +43,7 @@ int main(void)
    //int j=0;
    clock_setup();
    gpio_setup();
+	is2_setup();
 
 
 
@@ -59,7 +60,6 @@ int main(void)
 				LED_DISCO_RED_PIN |
 				LED_DISCO_BLUE_PIN);*/   /* LED on/off */
 		//start recording
-		record();
 
 		for (i = 0; i < 9000000; i++) {   /* Wait a bit. */
 			__asm__("nop");
@@ -80,8 +80,8 @@ static void clock_setup(void)
    /* Enable GPIOD clock. */ 
    rcc_periph_clock_enable(RCC_GPIOD);
 
-   /* Enable ADC clock */
-   //rcc_periph_clock_enable(RCC_ADC1);
+   /* Enable SPI2 Periph and gpio clocks */
+   rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_SPI2EN);
 }
 
 //------------------------------------------------------
@@ -101,37 +101,60 @@ static void gpio_setup(void)
 }
 
 //-------------------------------------------------------
-static void record(void)
+static void is2_setup(void)
 {
-	
-	//spi_clean_disable(SPI2);
-   //set clock
-   rcc_periph_clock_enable(RCC_SPI2);
-	spi_set_baudrate_prescaler(SPI2, SPI_CR1_BR_FPCLK_DIV_32);
-	gpio_set(LED_DISCO_PORT, LED_DISCO_RED_PIN);
+	/* Reset SPI, SPI_CR1 register cleared, SPI is disabled */
+	spi_reset(SPI2);
 
+	/* Set up SPI in Master mode with:
+	 * Clock baud rate: 1/64 of peripheral clock frequency
+	 * Clock polarity: Idle High
+	 * Clock phase: Data valid on 2nd clock pulse
+	 * Data frame format: 8-bit
+	 * Frame format: MSB First
+	 */
+	spi_init_master(SPI2,
+		SPI_CR1_BAUDRATE_FPCLK_DIV_64,
+		SPI_CR1_CPOL_CLK_TO_1_WHEN_IDLE,
+		SPI_CR1_CPHA_CLK_TRANSITION_2,
+		SPI_CR1_DFF_16BIT,
+		SPI_CR1_MSBFIRST);
+	 
+	/* Enable SPI1 periph. */
+	spi_enable(SPI2);
+
+	/*
+	 * Set NSS management to software.
+	 * Note:
+	 * Setting nss high is very important, even if we are controlling the GPIO
+	 * ourselves this bit needs to be at least set to 1, otherwise the spi
+	 * peripheral will not send any data out.
+	 */
+	spi_enable_software_slave_management(SPI2);
+	spi_set_nss_high(SPI2);
+			 
 }
 
 //static void mic_init(DEFAULT_AUDIO_IN_FREQ, DEFAULT_AUDIO_IN_BIT_RESOLUTION, DEFAULT_AUDIO_IN_CHANNEL_NBR)
-static void mic_init(uint32_t AudioFreq, uint32_t BitRes, uint32_t ChnlNbr)
-{
-	/*Enable PLLI2S clock*/
-	rcc_periph_clock_enable(RCC_SPI2);
-
-	clock_scale_t rccclkinit; 
-
-	/* PLLI2S_VCO Input = HSE_VALUE/PLL_M = 1 Mhz */
-	if ((AudioFreq & 0x7) == 0)
-	{
-		/* Audio frequency multiple of 8 (8/16/32/48/96/192)*/
-		/* PLLI2S_VCO Output = PLLI2S_VCO Input * PLLI2SN = 192 Mhz */
-		/* I2SCLK = PLLI2S_VCO Output/PLLI2SR = 192/6 = 32 Mhz */
-		#define RCC_PERIPHCLK_I2S             ((uint32_t)0x00000001)
-		uint32_t PeriphClockSelection = RCC_PERIPHCLK_I2S
-		uint8_t plli2sn = 192;
-		uint8_t plli2sn = 8;
-		rcc_clock_setup_hse_3v3(&rccclkinit);
-	}
+//static void mic_init(uint32_t AudioFreq, uint32_t BitRes, uint32_t ChnlNbr)
+//{
+//	/*Enable PLLI2S clock*/
+//	rcc_periph_clock_enable(RCC_SPI2);
+//
+//	clock_scale_t rccclkinit; 
+//
+//	/* PLLI2S_VCO Input = HSE_VALUE/PLL_M = 1 Mhz */
+//	if ((AudioFreq & 0x7) == 0)
+//	{
+//		/* Audio frequency multiple of 8 (8/16/32/48/96/192)*/
+//		/* PLLI2S_VCO Output = PLLI2S_VCO Input * PLLI2SN = 192 Mhz */
+//		/* I2SCLK = PLLI2S_VCO Output/PLLI2SR = 192/6 = 32 Mhz */
+//		#define RCC_PERIPHCLK_I2S             ((uint32_t)0x00000001)
+//		uint32_t PeriphClockSelection = RCC_PERIPHCLK_I2S
+//		uint8_t plli2sn = 192;
+//		uint8_t plli2sn = 8;
+//		rcc_clock_setup_hse_3v3(&rccclkinit);
+//	}
 
 
 
